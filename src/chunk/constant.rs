@@ -1,4 +1,5 @@
 use super::operation::{OpCode, OperationBase};
+use crate::vm::table::Table;
 use crate::{error::QalamError, value::Value};
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -27,6 +28,7 @@ impl OperationBase for Constant {
         &self,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
+        _: Rc<RefCell<Table>>,
         _: usize,
     ) -> Result<usize, QalamError> {
         stack.borrow_mut().push(self.operand.clone());

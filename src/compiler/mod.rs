@@ -16,7 +16,7 @@ impl Compiler {
         let mut chunk = Chunk::new();
         let parser = Parser::new(&scanner, &mut chunk)?;
         parser.parse()?;
-        println!("{}", chunk);
+        // println!("{}", chunk);
         return Ok(chunk);
     }
 }

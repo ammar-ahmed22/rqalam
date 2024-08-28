@@ -1,5 +1,5 @@
-use crate::error::QalamError;
 use crate::value::Value;
+use crate::{error::QalamError, vm::table::Table};
 use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone)]
@@ -8,6 +8,9 @@ pub enum OpCode {
     Constant,
     Unary,
     Binary,
+    Print,
+    Pop,
+    Define,
 }
 
 pub trait OperationBase {
@@ -16,6 +19,7 @@ pub trait OperationBase {
         &self,
         stack: Rc<RefCell<Vec<Value>>>,
         call_frame: Rc<RefCell<Vec<String>>>,
+        globals: Rc<RefCell<Table>>,
         line: usize,
     ) -> Result<usize, QalamError>;
 }

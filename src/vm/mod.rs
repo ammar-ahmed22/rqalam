@@ -4,10 +4,13 @@ use crate::error::QalamError;
 use crate::value::Value;
 use std::cell::RefCell;
 use std::rc::Rc;
+use table::Table;
+pub mod table;
 
 pub struct VM {
     stack: Rc<RefCell<Vec<Value>>>,
     call_frame: Rc<RefCell<Vec<String>>>,
+    globals: Rc<RefCell<Table>>,
     ip: RefCell<usize>,
 }
 
@@ -16,6 +19,7 @@ impl VM {
         return Self {
             stack: Rc::new(RefCell::new(Vec::new())),
             call_frame: Rc::new(RefCell::new(Vec::new())),
+            globals: Rc::new(RefCell::new(Table::new())),
             ip: RefCell::new(0),
         };
     }
@@ -28,6 +32,7 @@ impl VM {
             print!(" ]");
         }
         print!("\n");
+        println!("{}", self.globals.borrow());
         print!("{}\n", chunk.code[*self.ip.borrow()]);
     }
 
@@ -49,7 +54,12 @@ impl VM {
             self.debug(chunk);
             let inst = &chunk.code[*self.ip.borrow()];
             let line = &chunk.lines[*self.ip.borrow()];
-            let offset = inst.eval(self.stack.clone(), self.call_frame.clone(), *line);
+            let offset = inst.eval(
+                self.stack.clone(),
+                self.call_frame.clone(),
+                self.globals.clone(),
+                *line,
+            );
             match offset {
                 Ok(offset) => {
                     if offset > 0 {

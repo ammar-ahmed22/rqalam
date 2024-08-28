@@ -1,6 +1,9 @@
 pub mod binary;
 pub mod constant;
+pub mod define;
 pub mod operation;
+pub mod pop;
+pub mod print;
 pub mod return_op;
 pub mod unary;
 use operation::Operation;

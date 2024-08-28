@@ -36,7 +36,7 @@ impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Number(num) => write!(f, "{:.4}", num),
-            Self::Bool(bool) => write!(f, "{}", bool),
+            Self::Bool(bool) => write!(f, "{}", if *bool { "haqq" } else { "batil" }),
             Self::Null => write!(f, "ghaib"),
             Self::String(string) => write!(f, "\"{}\"", string),
         }

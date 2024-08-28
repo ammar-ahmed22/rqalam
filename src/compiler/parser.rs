@@ -3,7 +3,10 @@ use std::cell::RefCell;
 use crate::chunk::binary::Binary;
 use crate::chunk::binary::BinaryOp;
 use crate::chunk::constant::Constant;
+use crate::chunk::define::Define;
 use crate::chunk::operation::Operation;
+use crate::chunk::pop::Pop;
+use crate::chunk::print::Print;
 use crate::chunk::return_op::ReturnOp;
 use crate::chunk::unary::Unary;
 use crate::chunk::unary::UnaryOp;
@@ -195,9 +198,82 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
-    pub fn parse(&self) -> Result<(), QalamError> {
+    fn check_token(&self, token_type: TokenType) -> bool {
+        return self.current.borrow().token_type == token_type;
+    }
+
+    fn match_token(&self, token_type: TokenType) -> Result<bool, QalamError> {
+        if !self.check_token(token_type) {
+            return Ok(false);
+        }
+        self.advance()?;
+        return Ok(true);
+    }
+
+    fn print_statement(&self) -> Result<(), QalamError> {
         self.expression()?;
-        self.consume(TokenType::EOF, "Expect end of expression.")?;
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
+        self.emit_op(Print::new());
+        return Ok(());
+    }
+
+    fn expression_statement(&self) -> Result<(), QalamError> {
+        self.expression()?;
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
+        self.emit_op(Pop::new());
+        return Ok(());
+    }
+
+    pub fn statement(&self) -> Result<(), QalamError> {
+        if self.match_token(TokenType::PRINT)? {
+            self.print_statement()?;
+        } else {
+            self.expression_statement()?;
+        }
+
+        return Ok(());
+    }
+
+    fn parse_variable(&self) -> Result<String, QalamError> {
+        self.consume(TokenType::IDENTIFIER, "Expect variable name.")?;
+        return Ok(
+            std::str::from_utf8(self.previous.borrow().as_ref().unwrap().clone().literal)
+                .unwrap()
+                .to_string(),
+        );
+    }
+
+    pub fn var_declaration(&self) -> Result<(), QalamError> {
+        let global = self.parse_variable()?;
+
+        if self.match_token(TokenType::EQUAL)? {
+            self.expression()?;
+        } else {
+            self.emit_op(Constant::new(Value::Null))
+        }
+        self.consume(
+            TokenType::SEMICOLON,
+            "Expect ';' after variable declaration.",
+        )?;
+        self.emit_op(Define::new(global));
+        return Ok(());
+    }
+
+    pub fn declaration(&self) -> Result<(), QalamError> {
+        if self.match_token(TokenType::VAR)? {
+            self.var_declaration()?
+        } else {
+            self.statement()?;
+        }
+
+        return Ok(());
+    }
+
+    pub fn parse(&self) -> Result<(), QalamError> {
+        while !self.match_token(TokenType::EOF)? {
+            self.declaration()?;
+        }
+        // self.consume(TokenType::EOF, "Expect end of expression.")?;
         self.emit_return();
         return Ok(());
     }

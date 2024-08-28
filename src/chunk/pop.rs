@@ -1,43 +1,39 @@
-use crate::error::QalamError;
-use crate::value::Value;
+use super::operation::{OpCode, OperationBase};
 use crate::vm::table::Table;
+use crate::{error::QalamError, value::Value};
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::rc::Rc;
 
-use super::operation::{OpCode, OperationBase};
-
-pub struct ReturnOp {
+pub struct Pop {
     code: OpCode,
 }
 
-impl ReturnOp {
+impl Pop {
     pub fn new() -> Self {
-        return Self {
-            code: OpCode::Return,
-        };
+        return Self { code: OpCode::Pop };
     }
 }
 
-impl OperationBase for ReturnOp {
+impl OperationBase for Pop {
     fn disassemble(&self) -> OpCode {
         self.code.clone()
     }
 
     fn eval(
         &self,
-        _: Rc<RefCell<Vec<Value>>>,
-        call_frame: Rc<RefCell<Vec<String>>>,
+        stack: Rc<RefCell<Vec<Value>>>,
+        _: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
         _: usize,
     ) -> Result<usize, QalamError> {
-        call_frame.borrow_mut().pop();
+        stack.borrow_mut().pop().unwrap();
         return Ok(0);
     }
 }
 
-impl Display for ReturnOp {
+impl Display for Pop {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "OP_RETURN")
+        write!(f, "{:<16}", "OP_POP")
     }
 }

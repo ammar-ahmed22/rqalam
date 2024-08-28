@@ -1,4 +1,5 @@
 use super::operation::{OpCode, OperationBase};
+use crate::vm::table::Table;
 use crate::{error::QalamError, value::Value};
 use std::cell::RefCell;
 use std::fmt::Display;
@@ -43,6 +44,7 @@ impl OperationBase for Unary {
         &self,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
+        _: Rc<RefCell<Table>>,
         line: usize,
     ) -> Result<usize, QalamError> {
         let val = stack.borrow_mut().pop().unwrap();
