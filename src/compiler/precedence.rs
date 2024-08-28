@@ -2,7 +2,7 @@ use super::parser::Parser;
 use super::token::TokenType;
 use crate::error::QalamError;
 
-pub type ParseFn = fn(&Parser) -> Result<(), QalamError>;
+pub type ParseFn = fn(&Parser, bool) -> Result<(), QalamError>;
 pub struct ParseRule {
     pub prefix: Option<ParseFn>,
     pub infix: Option<ParseFn>,
@@ -86,46 +86,46 @@ impl std::ops::Add<usize> for Precedence {
 impl Precedence {
     pub fn get_rule(token_type: TokenType) -> ParseRule {
         match token_type {
-            TokenType::LEFT_PAREN => ParseRule::only_prefix(|parser| parser.grouping()),
+            TokenType::LEFT_PAREN => ParseRule::only_prefix(|parser, can_assign| parser.grouping(can_assign)),
             TokenType::MINUS => ParseRule::new(
-                Some(|parser| parser.unary()),
-                Some(|parser| parser.binary()),
+                Some(|parser, can_assign| parser.unary(can_assign)),
+                Some(|parser, can_assign| parser.binary(can_assign)),
                 Precedence::Term,
             ),
             TokenType::PLUS => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Term)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Term)
             }
             TokenType::SLASH => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Factor)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Factor)
             }
             TokenType::STAR => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Factor)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Factor)
             }
-            TokenType::NUMBER => ParseRule::only_prefix(|parser| parser.number()),
-            TokenType::FALSE => ParseRule::only_prefix(|parser| parser.literal()),
-            TokenType::TRUE => ParseRule::only_prefix(|parser| parser.literal()),
-            TokenType::NIL => ParseRule::only_prefix(|parser| parser.literal()),
-            TokenType::BANG => ParseRule::only_prefix(|parser| parser.unary()),
+            TokenType::NUMBER => ParseRule::only_prefix(|parser, can_assign| parser.number(can_assign)),
+            TokenType::FALSE => ParseRule::only_prefix(|parser, can_assign| parser.literal(can_assign)),
+            TokenType::TRUE => ParseRule::only_prefix(|parser, can_assign| parser.literal(can_assign)),
+            TokenType::NIL => ParseRule::only_prefix(|parser, can_assign| parser.literal(can_assign)),
+            TokenType::BANG => ParseRule::only_prefix(|parser, can_assign| parser.unary(can_assign)),
             TokenType::BANG_EQUAL => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Equality)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Equality)
             }
             TokenType::EQUAL_EQUAL => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Equality)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Equality)
             }
             TokenType::GREATER_EQUAL => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Comparison)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Comparison)
             }
             TokenType::GREATER => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Comparison)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Comparison)
             }
             TokenType::LESS_EQUAL => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Comparison)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Comparison)
             }
             TokenType::LESS => {
-                ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Comparison)
+                ParseRule::new(None, Some(|parser, can_assign| parser.binary(can_assign)), Precedence::Comparison)
             }
-            TokenType::STRING => ParseRule::only_prefix(|parser| parser.literal()),
-            TokenType::IDENTIFIER => ParseRule::only_prefix(|parser| parser.variable()),
+            TokenType::STRING => ParseRule::only_prefix(|parser, can_assign| parser.literal(can_assign)),
+            TokenType::IDENTIFIER => ParseRule::only_prefix(|parser, can_assign| parser.variable(can_assign)),
             _ => ParseRule::none(),
         }
     }

@@ -9,6 +9,7 @@ use crate::chunk::operation::Operation;
 use crate::chunk::pop::Pop;
 use crate::chunk::print::Print;
 use crate::chunk::return_op::ReturnOp;
+use crate::chunk::set::Set;
 use crate::chunk::unary::Unary;
 use crate::chunk::unary::UnaryOp;
 use crate::error::QalamError;
@@ -50,7 +51,7 @@ impl<'a> Parser<'a> {
         ));
     }
 
-    pub fn literal(&self) -> Result<(), QalamError> {
+    pub fn literal(&self, _: bool) -> Result<(), QalamError> {
         let prev = self.previous.borrow().as_ref().unwrap().clone();
         match prev.token_type {
             TokenType::FALSE => {
@@ -77,13 +78,13 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
-    pub fn grouping(&self) -> Result<(), QalamError> {
+    pub fn grouping(&self, _: bool) -> Result<(), QalamError> {
         self.expression()?;
         self.consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.")?;
         return Ok(());
     }
 
-    pub fn unary(&self) -> Result<(), QalamError> {
+    pub fn unary(&self, _: bool) -> Result<(), QalamError> {
         let op_type = self.previous.borrow().as_ref().unwrap().clone().token_type;
 
         self.parse_precedence(Precedence::Unary)?;
@@ -96,7 +97,7 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
-    pub fn binary(&self) -> Result<(), QalamError> {
+    pub fn binary(&self, _: bool) -> Result<(), QalamError> {
         let op_type = self.previous.borrow().as_ref().unwrap().clone().token_type;
         let rule = Precedence::get_rule(op_type.clone());
 
@@ -147,7 +148,8 @@ impl<'a> Parser<'a> {
         let prev = self.previous.borrow().as_ref().unwrap().clone();
         let prefix_rule = Precedence::get_rule(prev.token_type.clone()).prefix;
         if let Some(prefix_rule) = prefix_rule {
-            prefix_rule(self)?;
+            let can_assign = precedence <= Precedence::Assignment;
+            prefix_rule(self, can_assign)?;
         } else {
             return Err(QalamError::from_token_compile("Expect expression.", &prev));
         }
@@ -159,7 +161,11 @@ impl<'a> Parser<'a> {
             let prev = self.previous.borrow().as_ref().unwrap().clone();
             let infix_rule = Precedence::get_rule(prev.token_type.clone()).infix;
             if let Some(infix_rule) = infix_rule {
-                infix_rule(self)?;
+                let can_assign = precedence <= Precedence::Assignment;
+                infix_rule(self, can_assign)?;
+                if can_assign && self.match_token(TokenType::EQUAL)? {
+                    return Err(QalamError::from_token_compile("Invalid assignment target.", self.previous.clone().borrow().as_ref().unwrap()))
+                }
             }
         }
 
@@ -187,7 +193,7 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
-    pub fn number(&self) -> Result<(), QalamError> {
+    pub fn number(&self, _: bool) -> Result<(), QalamError> {
         let prev = self.previous.borrow().as_ref().unwrap().clone();
         match std::str::from_utf8(&prev.literal).unwrap().parse::<f64>() {
             Ok(num) => self.emit_op(Constant::new(Value::Number(num))),
@@ -244,14 +250,19 @@ impl<'a> Parser<'a> {
         return self.identifier_string(self.previous.borrow().as_ref().unwrap().clone())
     }
 
-    fn named_variable(&self, name: Token) -> Result<(), QalamError> {
+    fn named_variable(&self, name: Token, can_assign: bool) -> Result<(), QalamError> {
         let id = self.identifier_string(name)?;
-        self.emit_op(Get::new(id));
+        if can_assign && self.match_token(TokenType::EQUAL)? {
+            self.expression()?;
+            self.emit_op(Set::new(id));
+        } else {
+            self.emit_op(Get::new(id));
+        }
         return Ok(());
     }
 
-    pub fn variable(&self) -> Result<(), QalamError> {
-        self.named_variable(self.previous.borrow().as_ref().unwrap().clone())?;
+    pub fn variable(&self, can_assign: bool) -> Result<(), QalamError> {
+        self.named_variable(self.previous.clone().borrow().as_ref().unwrap().clone(), can_assign)?;
         return Ok(());
     }
 
