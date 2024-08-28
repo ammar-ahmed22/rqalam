@@ -6,6 +6,7 @@ pub mod pop;
 pub mod print;
 pub mod return_op;
 pub mod unary;
+pub mod get;
 use operation::Operation;
 use std::fmt::Display;
 

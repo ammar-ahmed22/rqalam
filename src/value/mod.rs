@@ -38,7 +38,7 @@ impl Display for Value {
             Self::Number(num) => write!(f, "{:.4}", num),
             Self::Bool(bool) => write!(f, "{}", if *bool { "haqq" } else { "batil" }),
             Self::Null => write!(f, "ghaib"),
-            Self::String(string) => write!(f, "\"{}\"", string),
+            Self::String(string) => write!(f, "{}", string),
         }
     }
 }

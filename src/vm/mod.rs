@@ -24,6 +24,7 @@ impl VM {
         };
     }
 
+    #[allow(unused)]
     fn debug(&self, chunk: &mut Chunk) {
         // print!("          ");
         for value in self.stack.borrow().iter() {
@@ -51,7 +52,7 @@ impl VM {
             if *self.ip.borrow() >= n {
                 break;
             }
-            self.debug(chunk);
+            // self.debug(chunk);
             let inst = &chunk.code[*self.ip.borrow()];
             let line = &chunk.lines[*self.ip.borrow()];
             let offset = inst.eval(

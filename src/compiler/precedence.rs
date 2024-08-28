@@ -125,6 +125,7 @@ impl Precedence {
                 ParseRule::new(None, Some(|parser| parser.binary()), Precedence::Comparison)
             }
             TokenType::STRING => ParseRule::only_prefix(|parser| parser.literal()),
+            TokenType::IDENTIFIER => ParseRule::only_prefix(|parser| parser.variable()),
             _ => ParseRule::none(),
         }
     }

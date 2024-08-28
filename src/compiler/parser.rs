@@ -4,6 +4,7 @@ use crate::chunk::binary::Binary;
 use crate::chunk::binary::BinaryOp;
 use crate::chunk::constant::Constant;
 use crate::chunk::define::Define;
+use crate::chunk::get::Get;
 use crate::chunk::operation::Operation;
 use crate::chunk::pop::Pop;
 use crate::chunk::print::Print;
@@ -234,13 +235,24 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
+    fn identifier_string(&self, name: Token) -> Result<String, QalamError> {
+        return Ok(std::str::from_utf8(name.literal).unwrap().to_string())
+    }
+
     fn parse_variable(&self) -> Result<String, QalamError> {
         self.consume(TokenType::IDENTIFIER, "Expect variable name.")?;
-        return Ok(
-            std::str::from_utf8(self.previous.borrow().as_ref().unwrap().clone().literal)
-                .unwrap()
-                .to_string(),
-        );
+        return self.identifier_string(self.previous.borrow().as_ref().unwrap().clone())
+    }
+
+    fn named_variable(&self, name: Token) -> Result<(), QalamError> {
+        let id = self.identifier_string(name)?;
+        self.emit_op(Get::new(id));
+        return Ok(());
+    }
+
+    pub fn variable(&self) -> Result<(), QalamError> {
+        self.named_variable(self.previous.borrow().as_ref().unwrap().clone())?;
+        return Ok(());
     }
 
     pub fn var_declaration(&self) -> Result<(), QalamError> {

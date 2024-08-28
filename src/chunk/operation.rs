@@ -11,6 +11,7 @@ pub enum OpCode {
     Print,
     Pop,
     Define,
+    Get
 }
 
 pub trait OperationBase {

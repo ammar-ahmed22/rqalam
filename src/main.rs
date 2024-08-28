@@ -28,6 +28,21 @@ pub fn repl() -> Result<(), QalamError> {
     return Ok(());
 }
 
+pub fn source(path: &String) -> Result<(), QalamError> {
+    match std::fs::read_to_string(path) {
+        Ok(contents) => {
+
+            let stream = Vec::<u8>::from(contents.clone() + "\n");
+            let mut vm = VM::new();
+            vm.interpret(stream)?;
+            return Ok(());
+        },
+        Err(e) => {
+            return Err(QalamError::new_compile(&format!("{}", e)))
+        }
+    }
+}
+
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() == 1 {
@@ -37,6 +52,10 @@ fn main() {
         }
     } else if args.len() == 2 {
         // source
+        if let Err(e) = source(&args[1]) {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
     } else {
         eprintln!("Usage: rqalam [path]");
         std::process::exit(1);
