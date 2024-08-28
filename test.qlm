@@ -1,3 +1,0 @@
-niyya beverage = "cafe au lait";
-niyya breakfast = "beignets with " + beverage;
-qul breakfast;
