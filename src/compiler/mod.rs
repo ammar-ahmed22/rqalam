@@ -18,11 +18,12 @@ pub struct Local {
     pub name: String,
     pub depth: usize,
     pub init: bool,
+    pub immutable: bool,
 }
 
 impl Local {
-    pub fn new(name: String, depth: usize, init: bool) -> Self {
-        Self { name, depth, init }
+    pub fn new(name: String, depth: usize, init: bool, immutable: bool) -> Self {
+        Self { name, depth, init, immutable }
     }
 }
 
@@ -46,10 +47,10 @@ impl Compiler {
         return Ok(chunk);
     }
 
-    pub fn add_local(&mut self, name: String) {
+    pub fn add_local(&mut self, name: String, immutable: bool) {
         (*self.locals)
             .borrow_mut()
-            .push(Local::new(name, self.scope_depth, false));
+            .push(Local::new(name, self.scope_depth, false, immutable));
         self.local_count += 1;
     }
 
@@ -57,7 +58,7 @@ impl Compiler {
         self.scope_depth += 1;
     }
 
-    pub fn resolve_local(&self, name: String, line: usize) -> Result<Scope, QalamError> {
+    pub fn resolve_local(&self, name: String, line: usize) -> Result<(Scope, bool), QalamError> {
         for i in (0..self.local_count).rev() {
             let local = &self.locals.borrow()[i];
             if local.name == name {
@@ -67,10 +68,10 @@ impl Compiler {
                         line,
                     ));
                 }
-                return Ok(Scope::Local(i));
+                return Ok((Scope::Local(i), local.immutable));
             }
         }
-        return Ok(Scope::Global);
+        return Ok((Scope::Global, false));
     }
 
     pub fn mark_initialized(&mut self) {

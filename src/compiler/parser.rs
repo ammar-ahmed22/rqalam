@@ -271,7 +271,7 @@ impl<'a> Parser<'a> {
         return Ok(std::str::from_utf8(name.literal).unwrap().to_string());
     }
 
-    fn declare_variable(&self) -> Result<(), QalamError> {
+    fn declare_variable(&self, immutable: bool) -> Result<(), QalamError> {
         if self.compiler.borrow().scope_depth == 0 {
             return Ok(());
         }
@@ -293,13 +293,13 @@ impl<'a> Parser<'a> {
             }
         }
 
-        self.compiler.borrow_mut().add_local(name);
+        self.compiler.borrow_mut().add_local(name, immutable);
         return Ok(());
     }
 
-    fn parse_variable(&self) -> Result<String, QalamError> {
+    fn parse_variable(&self, immutable: bool) -> Result<String, QalamError> {
         self.consume(TokenType::IDENTIFIER, "Expect variable name.")?;
-        self.declare_variable()?;
+        self.declare_variable(immutable)?;
         if self.compiler.borrow().scope_depth > 0 {
             return Ok(String::new());
         }
@@ -308,12 +308,15 @@ impl<'a> Parser<'a> {
 
     fn named_variable(&self, name: Token, can_assign: bool) -> Result<(), QalamError> {
         let id = self.identifier_string(name)?;
-        let scope = self.compiler.borrow().resolve_local(
+        let (scope, immutable) = self.compiler.borrow().resolve_local(
             id.clone(),
             self.previous.clone().borrow().as_ref().unwrap().line,
         )?;
 
         if can_assign && self.match_token(TokenType::EQUAL)? {
+            if immutable {
+                return Err(QalamError::from_token_compile(&format!("Invalid assignment target. Cannot assign to 'lazim' variable '{}'.", id), self.previous.clone().borrow().as_ref().unwrap()))
+            }
             self.expression()?;
             self.emit_op(Set::new(id, scope));
         } else {
@@ -339,8 +342,8 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
-    pub fn var_declaration(&self) -> Result<(), QalamError> {
-        let global = self.parse_variable()?;
+    pub fn var_declaration(&self, immutable: bool) -> Result<(), QalamError> {
+        let global = self.parse_variable(immutable)?;
 
         if self.match_token(TokenType::EQUAL)? {
             self.expression()?;
@@ -358,7 +361,9 @@ impl<'a> Parser<'a> {
 
     pub fn declaration(&self) -> Result<(), QalamError> {
         if self.match_token(TokenType::VAR)? {
-            self.var_declaration()?
+            self.var_declaration(false)?
+        } else if self.match_token(TokenType::CONST)? {
+            self.var_declaration(true)?
         } else {
             self.statement()?;
         }
@@ -367,11 +372,17 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&self) -> Result<(), QalamError> {
+        self.compiler.borrow_mut().begin_scope();
         while !self.match_token(TokenType::EOF)? {
             self.declaration()?;
         }
+        self.compiler.borrow_mut().end_scope(
+            &mut self.chunk.borrow_mut(),
+                self.previous.clone().borrow().as_ref().unwrap().line,
+        );
         // self.consume(TokenType::EOF, "Expect end of expression.")?;
         self.emit_return();
+        
         return Ok(());
     }
 }

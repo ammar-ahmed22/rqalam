@@ -171,7 +171,23 @@ impl<'a> Scanner<'a> {
                 }
             }
             'k' => return self.check_keyword(1, "itab", TokenType::CLASS),
-            'l' => return self.check_keyword(1, "a", TokenType::BANG),
+            'l' => {
+                if *self.current.borrow() - *self.start.borrow() > 1 {
+                    match self.stream[*self.start.borrow() + 1] as char {
+                        'a' => {
+                            if *self.current.borrow() - *self.start.borrow() > 2 {
+                                match self.stream[*self.start.borrow() + 2] as char {
+                                    'z' => return self.check_keyword(3, "im", TokenType::CONST),
+                                    _ => {}
+                                }
+                            } else {
+                                return TokenType::BANG;
+                            }
+                        },
+                        _ => {}
+                    }
+                }
+            }
             'n' => {
                 if *self.current.borrow() - *self.start.borrow() > 1 {
                     match self.stream[*self.start.borrow() + 1] as char {
