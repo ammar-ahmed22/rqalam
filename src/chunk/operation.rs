@@ -10,9 +10,10 @@ pub enum OpCode {
     Binary,
     Print,
     Pop,
+    PopN,
     Define,
     Get,
-    Set
+    Set,
 }
 
 pub trait OperationBase {

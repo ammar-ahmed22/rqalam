@@ -31,15 +31,12 @@ pub fn repl() -> Result<(), QalamError> {
 pub fn source(path: &String) -> Result<(), QalamError> {
     match std::fs::read_to_string(path) {
         Ok(contents) => {
-
             let stream = Vec::<u8>::from(contents.clone() + "\n");
             let mut vm = VM::new();
             vm.interpret(stream)?;
             return Ok(());
-        },
-        Err(e) => {
-            return Err(QalamError::new_compile(&format!("{}", e)))
         }
+        Err(e) => return Err(QalamError::new_compile(&format!("{}", e))),
     }
 }
 

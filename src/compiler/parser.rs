@@ -3,15 +3,15 @@ use std::cell::RefCell;
 use crate::chunk::binary::Binary;
 use crate::chunk::binary::BinaryOp;
 use crate::chunk::constant::Constant;
-use crate::chunk::define::Define;
-use crate::chunk::get::Get;
 use crate::chunk::operation::Operation;
 use crate::chunk::pop::Pop;
 use crate::chunk::print::Print;
 use crate::chunk::return_op::ReturnOp;
-use crate::chunk::set::Set;
 use crate::chunk::unary::Unary;
 use crate::chunk::unary::UnaryOp;
+use crate::chunk::variable::Define;
+use crate::chunk::variable::Get;
+use crate::chunk::variable::Set;
 use crate::error::QalamError;
 use crate::value::Value;
 
@@ -19,6 +19,7 @@ use super::precedence::Precedence;
 use super::token::Token;
 use super::token::TokenType;
 use super::Chunk;
+use super::Compiler;
 use super::Scanner;
 
 pub struct Parser<'a> {
@@ -26,16 +27,22 @@ pub struct Parser<'a> {
     chunk: RefCell<&'a mut Chunk>,
     current: RefCell<Token<'a>>,
     previous: RefCell<Option<Token<'a>>>,
+    compiler: RefCell<&'a mut Compiler>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(scanner: &'a Scanner<'a>, chunk: &'a mut Chunk) -> Result<Self, QalamError> {
+    pub fn new(
+        scanner: &'a Scanner<'a>,
+        chunk: &'a mut Chunk,
+        compiler: &'a mut Compiler,
+    ) -> Result<Self, QalamError> {
         let curr = scanner.scan()?;
         return Ok(Self {
             scanner,
             chunk: RefCell::new(chunk),
             current: RefCell::new(curr),
             previous: RefCell::new(None),
+            compiler: RefCell::new(compiler),
         });
     }
 
@@ -164,7 +171,10 @@ impl<'a> Parser<'a> {
                 let can_assign = precedence <= Precedence::Assignment;
                 infix_rule(self, can_assign)?;
                 if can_assign && self.match_token(TokenType::EQUAL)? {
-                    return Err(QalamError::from_token_compile("Invalid assignment target.", self.previous.clone().borrow().as_ref().unwrap()))
+                    return Err(QalamError::from_token_compile(
+                        "Invalid assignment target.",
+                        self.previous.clone().borrow().as_ref().unwrap(),
+                    ));
                 }
             }
         }
@@ -231,9 +241,25 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
+    pub fn block(&self) -> Result<(), QalamError> {
+        while !self.check_token(TokenType::RIGHT_BRACE) && !self.check_token(TokenType::EOF) {
+            self.declaration()?;
+        }
+
+        self.consume(TokenType::RIGHT_BRACE, "Expect '}' after block.")?;
+        return Ok(());
+    }
+
     pub fn statement(&self) -> Result<(), QalamError> {
         if self.match_token(TokenType::PRINT)? {
             self.print_statement()?;
+        } else if self.match_token(TokenType::LEFT_BRACE)? {
+            self.compiler.borrow_mut().begin_scope();
+            self.block()?;
+            self.compiler.borrow_mut().end_scope(
+                &mut self.chunk.borrow_mut(),
+                self.previous.clone().borrow().as_ref().unwrap().line,
+            );
         } else {
             self.expression_statement()?;
         }
@@ -242,27 +268,74 @@ impl<'a> Parser<'a> {
     }
 
     fn identifier_string(&self, name: Token) -> Result<String, QalamError> {
-        return Ok(std::str::from_utf8(name.literal).unwrap().to_string())
+        return Ok(std::str::from_utf8(name.literal).unwrap().to_string());
+    }
+
+    fn declare_variable(&self) -> Result<(), QalamError> {
+        if self.compiler.borrow().scope_depth == 0 {
+            return Ok(());
+        }
+        let prev = self.previous.clone().borrow().as_ref().unwrap().clone();
+        let name = std::str::from_utf8(&prev.literal).unwrap().to_string();
+        {
+            let compiler = self.compiler.borrow();
+            for i in (0..compiler.local_count).rev() {
+                let local = &compiler.locals.borrow()[i];
+                if local.init && local.depth < compiler.scope_depth {
+                    break;
+                }
+                if name == local.name {
+                    return Err(QalamError::from_token_compile(
+                        "Already a variable with this name in this scope.",
+                        &prev,
+                    ));
+                }
+            }
+        }
+
+        self.compiler.borrow_mut().add_local(name);
+        return Ok(());
     }
 
     fn parse_variable(&self) -> Result<String, QalamError> {
         self.consume(TokenType::IDENTIFIER, "Expect variable name.")?;
-        return self.identifier_string(self.previous.borrow().as_ref().unwrap().clone())
+        self.declare_variable()?;
+        if self.compiler.borrow().scope_depth > 0 {
+            return Ok(String::new());
+        }
+        return self.identifier_string(self.previous.borrow().as_ref().unwrap().clone());
     }
 
     fn named_variable(&self, name: Token, can_assign: bool) -> Result<(), QalamError> {
         let id = self.identifier_string(name)?;
+        let scope = self.compiler.borrow().resolve_local(
+            id.clone(),
+            self.previous.clone().borrow().as_ref().unwrap().line,
+        )?;
+
         if can_assign && self.match_token(TokenType::EQUAL)? {
             self.expression()?;
-            self.emit_op(Set::new(id));
+            self.emit_op(Set::new(id, scope));
         } else {
-            self.emit_op(Get::new(id));
+            self.emit_op(Get::new(id, scope));
         }
         return Ok(());
     }
 
     pub fn variable(&self, can_assign: bool) -> Result<(), QalamError> {
-        self.named_variable(self.previous.clone().borrow().as_ref().unwrap().clone(), can_assign)?;
+        self.named_variable(
+            self.previous.clone().borrow().as_ref().unwrap().clone(),
+            can_assign,
+        )?;
+        return Ok(());
+    }
+
+    fn define_variable(&self, name: String) -> Result<(), QalamError> {
+        if self.compiler.borrow().scope_depth > 0 {
+            self.compiler.borrow_mut().mark_initialized();
+            return Ok(());
+        }
+        self.emit_op(Define::new(name));
         return Ok(());
     }
 
@@ -278,7 +351,8 @@ impl<'a> Parser<'a> {
             TokenType::SEMICOLON,
             "Expect ';' after variable declaration.",
         )?;
-        self.emit_op(Define::new(global));
+        // define_variable
+        self.define_variable(global)?;
         return Ok(());
     }
 

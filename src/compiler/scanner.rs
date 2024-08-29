@@ -165,6 +165,7 @@ impl<'a> Scanner<'a> {
                         'f' => return self.check_keyword(2, "tar", TokenType::BREAK),
                         'b' => return self.check_keyword(2, "n", TokenType::INHERITS),
                         'l' => return self.check_keyword(2, "la", TokenType::ELSE),
+                        't' => return self.check_keyword(2, "ha", TokenType::IF),
                         _ => {}
                     }
                 }
@@ -175,7 +176,6 @@ impl<'a> Scanner<'a> {
                 if *self.current.borrow() - *self.start.borrow() > 1 {
                     match self.stream[*self.start.borrow() + 1] as char {
                         'a' => return self.check_keyword(2, "fs", TokenType::THIS),
-                        'i' => return self.check_keyword(2, "yya", TokenType::VAR),
                         _ => {}
                     }
                 }
@@ -189,7 +189,7 @@ impl<'a> Scanner<'a> {
             's' => {
                 if *self.current.borrow() - *self.start.borrow() > 1 {
                     match self.stream[*self.start.borrow() + 1] as char {
-                        'h' => return self.check_keyword(2, "art", TokenType::IF),
+                        'h' => return self.check_keyword(2, "ai", TokenType::VAR),
                         'a' => return self.check_keyword(2, "far", TokenType::CONTINUE),
                         _ => {}
                     }
