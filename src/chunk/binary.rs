@@ -54,6 +54,9 @@ impl BinaryOp {
             }
             Self::Div => {
                 if let (Value::Number(a), Value::Number(b)) = (a, b) {
+                    if b == 0.0 {
+                        return Err(QalamError::with_line_runtime("Cannot divide by zero!", line));
+                    }
                     return Ok(Value::Number(a / b));
                 } else {
                     return Err(QalamError::with_line_runtime(
@@ -64,6 +67,9 @@ impl BinaryOp {
             },
             Self::Modulo => {
                 if let (Value::Number(a), Value::Number(b)) = (a, b) {
+                    if b == 0.0 {
+                        return Err(QalamError::with_line_runtime("Cannot divide by zero!", line));
+                    }
                     return Ok(Value::Number(a % b))
                 } else {
                     return Err(QalamError::with_line_runtime("Operands must be numbers!", line))
