@@ -6,13 +6,14 @@ pub mod print;
 pub mod return_op;
 pub mod unary;
 pub mod variable;
+pub mod jump;
 use operation::Operation;
 use std::fmt::Display;
 
 pub struct Chunk {
     pub code: Vec<Box<dyn Operation>>,
     capacity: usize,
-    count: usize,
+    pub count: usize,
     pub lines: Vec<usize>,
 }
 

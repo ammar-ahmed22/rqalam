@@ -22,6 +22,7 @@ impl OperationBase for Pop {
 
     fn eval(
         &self,
+        _: usize,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
@@ -29,6 +30,14 @@ impl OperationBase for Pop {
     ) -> Result<usize, QalamError> {
         stack.borrow_mut().pop().unwrap();
         return Ok(0);
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 
@@ -59,6 +68,7 @@ impl OperationBase for PopN {
 
     fn eval(
         &self,
+        _: usize,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
@@ -68,6 +78,14 @@ impl OperationBase for PopN {
             stack.borrow_mut().pop().unwrap();
         }
         return Ok(0);
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 

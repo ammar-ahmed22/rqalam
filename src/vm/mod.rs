@@ -33,12 +33,13 @@ impl VM {
             print!(" ]");
         }
         print!("\n");
-        println!("{}", self.globals.borrow());
+        // println!("{}", self.globals.borrow());
         print!("{}\n", chunk.code[*self.ip.borrow()]);
     }
 
     pub fn interpret(&mut self, src: Vec<u8>) -> Result<(), QalamError> {
         let mut chunk = Compiler::compile(src)?;
+        println!("{}", chunk);
         // return Ok(());
         self.run(&mut chunk)
     }
@@ -56,6 +57,7 @@ impl VM {
             let inst = &chunk.code[*self.ip.borrow()];
             let line = &chunk.lines[*self.ip.borrow()];
             let offset = inst.eval(
+                *self.ip.borrow(),
                 self.stack.clone(),
                 self.call_frame.clone(),
                 self.globals.clone(),

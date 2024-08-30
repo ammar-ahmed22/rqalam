@@ -3,6 +3,8 @@ use std::cell::RefCell;
 use crate::chunk::binary::Binary;
 use crate::chunk::binary::BinaryOp;
 use crate::chunk::constant::Constant;
+use crate::chunk::jump::FalseJump;
+use crate::chunk::jump::Jump;
 use crate::chunk::operation::Operation;
 use crate::chunk::pop::Pop;
 use crate::chunk::print::Print;
@@ -250,9 +252,78 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
+    fn emit_jump(&self, op: impl Operation + 'static) -> usize {
+        self.emit_op(op);
+        return self.chunk.borrow().count - 1;
+    }
+
+    fn patch_false_jump(&self, jump: usize) {
+        let offset = self.chunk.borrow().count - 1 - jump; // how much to jump
+        let mut chunk = self.chunk.borrow_mut();
+
+        let jump = &mut chunk.code[jump];
+        let false_jump_op = jump.as_any_mut().downcast_mut::<FalseJump>();
+        if let Some(false_jump_op) = false_jump_op {
+            false_jump_op.jump = Some(offset);
+        }
+    }
+
+    fn patch_jump(&self, jump: usize) {
+        let offset = self.chunk.borrow().count - 1 - jump; // how much to jump
+        let mut chunk = self.chunk.borrow_mut();
+
+        let jump = &mut chunk.code[jump];
+        let jump_op = jump.as_any_mut().downcast_mut::<Jump>();
+        if let Some(jump_op) = jump_op {
+            jump_op.jump = Some(offset);
+        }
+    }
+
+    pub fn and(&self, _: bool) -> Result<(), QalamError> {
+        let end_jump = self.emit_jump(FalseJump::new());
+        self.emit_op(Pop::new());
+
+        self.parse_precedence(Precedence::And)?;
+        self.patch_false_jump(end_jump);
+        return Ok(());
+    }
+
+    pub fn or(&self, _: bool) -> Result<(), QalamError> {
+        let else_jump = self.emit_jump(FalseJump::new());
+        let end_jump = self.emit_jump(Jump::new());
+        self.patch_false_jump(else_jump);
+        self.emit_op(Pop::new());
+        self.parse_precedence(Precedence::Or)?;
+        self.patch_jump(end_jump);
+        return Ok(());
+    }
+
+    fn if_statement(&self) -> Result<(), QalamError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'itha'.")?;
+        self.expression()?;
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.")?;
+
+        let then_jump = self.emit_jump(FalseJump::new());
+        self.emit_op(Pop::new());
+        self.statement()?;
+        let else_jump = self.emit_jump(Jump::new());
+
+        self.patch_false_jump(then_jump);
+        self.emit_op(Pop::new());
+        if self.match_token(TokenType::ELSE)? {
+            self.statement()?;
+        }
+        self.patch_jump(else_jump);
+
+        // self.emit_op(Pop::new());
+        return Ok(());
+    }
+
     pub fn statement(&self) -> Result<(), QalamError> {
         if self.match_token(TokenType::PRINT)? {
             self.print_statement()?;
+        } else if self.match_token(TokenType::IF)? {
+            self.if_statement()?;
         } else if self.match_token(TokenType::LEFT_BRACE)? {
             self.compiler.borrow_mut().begin_scope();
             self.block()?;

@@ -42,6 +42,7 @@ impl OperationBase for Unary {
 
     fn eval(
         &self,
+        _: usize,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
@@ -62,6 +63,14 @@ impl OperationBase for Unary {
             UnaryOp::Bang => stack.borrow_mut().push(Value::Bool(val.is_falsy())),
         }
         return Ok(0);
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 

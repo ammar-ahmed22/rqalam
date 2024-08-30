@@ -26,6 +26,7 @@ impl OperationBase for ReturnOp {
 
     fn eval(
         &self,
+        _: usize,
         _: Rc<RefCell<Vec<Value>>>,
         call_frame: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
@@ -33,6 +34,14 @@ impl OperationBase for ReturnOp {
     ) -> Result<usize, QalamError> {
         call_frame.borrow_mut().pop();
         return Ok(0);
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 

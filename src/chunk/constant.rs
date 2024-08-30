@@ -26,6 +26,7 @@ impl OperationBase for Constant {
 
     fn eval(
         &self,
+        _: usize,
         stack: Rc<RefCell<Vec<Value>>>,
         _: Rc<RefCell<Vec<String>>>,
         _: Rc<RefCell<Table>>,
@@ -34,6 +35,14 @@ impl OperationBase for Constant {
         stack.borrow_mut().push(self.operand.clone());
 
         return Ok(0);
+    }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 
