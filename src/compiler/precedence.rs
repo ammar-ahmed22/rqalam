@@ -159,13 +159,17 @@ impl Precedence {
             }
             TokenType::IDENTIFIER => {
                 ParseRule::only_prefix(|parser, can_assign| parser.variable(can_assign))
-            },
-            TokenType::AND => {
-                ParseRule::new(None, Some(|parser, can_assign| parser.and(can_assign)), Precedence::And)
-            },
-            TokenType::OR => {
-                ParseRule::new(None, Some(|parser, can_assign| parser.or(can_assign)), Precedence::Or)
             }
+            TokenType::AND => ParseRule::new(
+                None,
+                Some(|parser, can_assign| parser.and(can_assign)),
+                Precedence::And,
+            ),
+            TokenType::OR => ParseRule::new(
+                None,
+                Some(|parser, can_assign| parser.or(can_assign)),
+                Precedence::Or,
+            ),
             _ => ParseRule::none(),
         }
     }

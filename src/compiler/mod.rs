@@ -23,7 +23,12 @@ pub struct Local {
 
 impl Local {
     pub fn new(name: String, depth: usize, init: bool, immutable: bool) -> Self {
-        Self { name, depth, init, immutable }
+        Self {
+            name,
+            depth,
+            init,
+            immutable,
+        }
     }
 }
 

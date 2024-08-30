@@ -1,12 +1,12 @@
 pub mod binary;
 pub mod constant;
+pub mod jump;
 pub mod operation;
 pub mod pop;
 pub mod print;
 pub mod return_op;
 pub mod unary;
 pub mod variable;
-pub mod jump;
 use operation::Operation;
 use std::fmt::Display;
 

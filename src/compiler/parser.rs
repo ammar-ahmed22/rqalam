@@ -386,7 +386,13 @@ impl<'a> Parser<'a> {
 
         if can_assign && self.match_token(TokenType::EQUAL)? {
             if immutable {
-                return Err(QalamError::from_token_compile(&format!("Invalid assignment target. Cannot assign to 'lazim' variable '{}'.", id), self.previous.clone().borrow().as_ref().unwrap()))
+                return Err(QalamError::from_token_compile(
+                    &format!(
+                        "Invalid assignment target. Cannot assign to 'lazim' variable '{}'.",
+                        id
+                    ),
+                    self.previous.clone().borrow().as_ref().unwrap(),
+                ));
             }
             self.expression()?;
             self.emit_op(Set::new(id, scope));
@@ -449,11 +455,11 @@ impl<'a> Parser<'a> {
         }
         self.compiler.borrow_mut().end_scope(
             &mut self.chunk.borrow_mut(),
-                self.previous.clone().borrow().as_ref().unwrap().line,
+            self.previous.clone().borrow().as_ref().unwrap().line,
         );
         // self.consume(TokenType::EOF, "Expect end of expression.")?;
         self.emit_return();
-        
+
         return Ok(());
     }
 }

@@ -183,7 +183,7 @@ impl<'a> Scanner<'a> {
                             } else {
                                 return TokenType::BANG;
                             }
-                        },
+                        }
                         _ => {}
                     }
                 }
