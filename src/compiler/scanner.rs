@@ -276,6 +276,16 @@ impl<'a> Scanner<'a> {
             '+' => return Ok(self.make_token(TokenType::PLUS)),
             '*' => return Ok(self.make_token(TokenType::STAR)),
             '/' => return Ok(self.make_token(TokenType::SLASH)),
+            '&' => {
+                if self.match_char('&') {
+                    return Ok(self.make_token(TokenType::AND))
+                }
+            },
+            '|' => {
+                if self.match_char('|') {
+                    return Ok(self.make_token(TokenType::OR))
+                }
+            },
             '!' => {
                 if self.match_char('=') {
                     return Ok(self.make_token(TokenType::BANG_EQUAL));
