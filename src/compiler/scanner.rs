@@ -275,6 +275,7 @@ impl<'a> Scanner<'a> {
             '-' => return Ok(self.make_token(TokenType::MINUS)),
             '+' => return Ok(self.make_token(TokenType::PLUS)),
             '*' => return Ok(self.make_token(TokenType::STAR)),
+            '%' => return Ok(self.make_token(TokenType::PERCENT)),
             '/' => return Ok(self.make_token(TokenType::SLASH)),
             '&' => {
                 if self.match_char('&') {

@@ -126,6 +126,9 @@ impl<'a> Parser<'a> {
             TokenType::SLASH => {
                 self.emit_op(Binary::new(BinaryOp::Div));
             }
+            TokenType::PERCENT => {
+                self.emit_op(Binary::new(BinaryOp::Modulo));
+            }
             TokenType::BANG_EQUAL => {
                 self.emit_op(Binary::new(BinaryOp::Equal));
                 self.emit_op(Unary::new(UnaryOp::Bang));
