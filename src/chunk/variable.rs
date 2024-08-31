@@ -62,7 +62,7 @@ impl Display for Define {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Scope {
     Global,
     Local(usize),

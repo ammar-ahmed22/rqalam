@@ -233,6 +233,15 @@ impl<'a> Parser<'a> {
         return Ok(true);
     }
 
+    fn match_tokens(&self, token_types: &[TokenType]) -> Result<bool, QalamError> {
+        for token_type in token_types {
+            if self.match_token(token_type.clone())? {
+                return Ok(true);
+            }
+        }
+        return Ok(false);
+    }
+
     fn print_statement(&self) -> Result<(), QalamError> {
         self.expression()?;
         self.consume(TokenType::SEMICOLON, "Expect ';' after value.")?;
@@ -410,7 +419,17 @@ impl<'a> Parser<'a> {
             self.previous.clone().borrow().as_ref().unwrap().line,
         )?;
 
-        if can_assign && self.match_token(TokenType::EQUAL)? {
+        if can_assign
+            && self.match_tokens(&[
+                TokenType::EQUAL,
+                TokenType::INCREMENT,
+                TokenType::DECREMENT,
+                TokenType::PLUS_EQUAL,
+                TokenType::MINUS_EQUAL,
+                TokenType::STAR_EQUAL,
+                TokenType::SLASH_EQUAL,
+            ])?
+        {
             if immutable {
                 return Err(QalamError::from_token_compile(
                     &format!(
@@ -420,7 +439,42 @@ impl<'a> Parser<'a> {
                     self.previous.clone().borrow().as_ref().unwrap(),
                 ));
             }
-            self.expression()?;
+            match self.previous.clone().borrow().as_ref().unwrap().token_type {
+                TokenType::EQUAL => {
+                    self.expression()?;
+                }
+                TokenType::INCREMENT => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.emit_op(Constant::new(Value::Number(1.0)));
+                    self.emit_op(Binary::new(BinaryOp::Add));
+                }
+                TokenType::DECREMENT => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.emit_op(Constant::new(Value::Number(1.0)));
+                    self.emit_op(Binary::new(BinaryOp::Subtract));
+                }
+                TokenType::PLUS_EQUAL => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.expression()?;
+                    self.emit_op(Binary::new(BinaryOp::Add))
+                }
+                TokenType::MINUS_EQUAL => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.expression()?;
+                    self.emit_op(Binary::new(BinaryOp::Subtract))
+                }
+                TokenType::STAR_EQUAL => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.expression()?;
+                    self.emit_op(Binary::new(BinaryOp::Mult))
+                }
+                TokenType::SLASH_EQUAL => {
+                    self.emit_op(Get::new(id.clone(), scope.clone()));
+                    self.expression()?;
+                    self.emit_op(Binary::new(BinaryOp::Div))
+                }
+                _ => {}
+            };
             self.emit_op(Set::new(id, scope));
         } else {
             self.emit_op(Get::new(id, scope));

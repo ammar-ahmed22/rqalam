@@ -24,6 +24,12 @@ pub enum TokenType {
     GREATER_EQUAL,
     LESS,
     LESS_EQUAL,
+    PLUS_EQUAL,
+    MINUS_EQUAL,
+    STAR_EQUAL,
+    SLASH_EQUAL,
+    INCREMENT,
+    DECREMENT,
 
     // Literals.
     IDENTIFIER,

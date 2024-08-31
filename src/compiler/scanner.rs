@@ -272,11 +272,39 @@ impl<'a> Scanner<'a> {
             ';' => return Ok(self.make_token(TokenType::SEMICOLON)),
             ',' => return Ok(self.make_token(TokenType::COMMA)),
             '.' => return Ok(self.make_token(TokenType::DOT)),
-            '-' => return Ok(self.make_token(TokenType::MINUS)),
-            '+' => return Ok(self.make_token(TokenType::PLUS)),
-            '*' => return Ok(self.make_token(TokenType::STAR)),
+            '-' => {
+                if self.match_char('-') {
+                    return Ok(self.make_token(TokenType::DECREMENT));
+                } else if self.match_char('=') {
+                    return Ok(self.make_token(TokenType::MINUS_EQUAL));
+                } else {
+                    return Ok(self.make_token(TokenType::MINUS));
+                }
+            }
+            '+' => {
+                if self.match_char('+') {
+                    return Ok(self.make_token(TokenType::INCREMENT));
+                } else if self.match_char('=') {
+                    return Ok(self.make_token(TokenType::PLUS_EQUAL));
+                } else {
+                    return Ok(self.make_token(TokenType::PLUS));
+                }
+            }
+            '*' => {
+                if self.match_char('=') {
+                    return Ok(self.make_token(TokenType::STAR_EQUAL));
+                } else {
+                    return Ok(self.make_token(TokenType::STAR));
+                }
+            }
             '%' => return Ok(self.make_token(TokenType::PERCENT)),
-            '/' => return Ok(self.make_token(TokenType::SLASH)),
+            '/' => {
+                if self.match_char('=') {
+                    return Ok(self.make_token(TokenType::SLASH_EQUAL));
+                } else {
+                    return Ok(self.make_token(TokenType::SLASH));
+                }
+            }
             '&' => {
                 if self.match_char('&') {
                     return Ok(self.make_token(TokenType::AND));
