@@ -5,6 +5,7 @@ use crate::chunk::binary::BinaryOp;
 use crate::chunk::constant::Constant;
 use crate::chunk::jump::FalseJump;
 use crate::chunk::jump::Jump;
+use crate::chunk::jump::LoopJump;
 use crate::chunk::operation::Operation;
 use crate::chunk::pop::Pop;
 use crate::chunk::print::Print;
@@ -322,11 +323,33 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
+    fn emit_loop(&self, start: usize) {
+        let jump = self.chunk.borrow().count - 1 - start;
+        self.emit_op(LoopJump::new(jump));
+    }
+
+    fn while_statement(&self) -> Result<(), QalamError> {
+        let loop_start = self.chunk.borrow().count - 1;
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'baynama'.")?;
+        self.expression()?;
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.")?;
+
+        let exit_jump = self.emit_jump(FalseJump::new());
+        self.emit_op(Pop::new());
+        self.statement()?;
+        self.emit_loop(loop_start);
+        self.patch_false_jump(exit_jump);
+        self.emit_op(Pop::new());
+        return Ok(());
+    }
+
     pub fn statement(&self) -> Result<(), QalamError> {
         if self.match_token(TokenType::PRINT)? {
             self.print_statement()?;
         } else if self.match_token(TokenType::IF)? {
             self.if_statement()?;
+        } else if self.match_token(TokenType::WHILE)? {
+            self.while_statement()?;
         } else if self.match_token(TokenType::LEFT_BRACE)? {
             self.compiler.borrow_mut().begin_scope();
             self.block()?;

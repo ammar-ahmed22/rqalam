@@ -113,3 +113,49 @@ impl Display for FalseJump {
         write!(f, "{:<16} '{:?}'", "OP_FALSE_JUMP", self.jump)
     }
 }
+
+
+pub struct LoopJump {
+  code: OpCode,
+  pub jump: usize,
+}
+
+impl LoopJump {
+  pub fn new(jump: usize) -> Self {
+      Self {
+          code: OpCode::LoopJump,
+          jump,
+      }
+  }
+}
+
+impl OperationBase for LoopJump {
+  fn disassemble(&self) -> OpCode {
+      return self.code.clone();
+  }
+
+  fn eval(
+      &self,
+      curr_offset: usize,
+      _: Rc<RefCell<Vec<Value>>>,
+      _: Rc<RefCell<Vec<String>>>,
+      _: Rc<RefCell<Table>>,
+      _: usize,
+  ) -> Result<usize, QalamError> {
+      return Ok(curr_offset - self.jump);
+  }
+
+  fn as_any(&self) -> &dyn Any {
+      self
+  }
+
+  fn as_any_mut(&mut self) -> &mut dyn Any {
+      self
+  }
+}
+
+impl Display for LoopJump {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "{:<16} '-{:?}'", "OP_LOOP_JUMP", self.jump)
+  }
+}
