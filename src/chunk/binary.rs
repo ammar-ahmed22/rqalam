@@ -55,7 +55,10 @@ impl BinaryOp {
             Self::Div => {
                 if let (Value::Number(a), Value::Number(b)) = (a, b) {
                     if b == 0.0 {
-                        return Err(QalamError::with_line_runtime("Cannot divide by zero!", line));
+                        return Err(QalamError::with_line_runtime(
+                            "Cannot divide by zero!",
+                            line,
+                        ));
                     }
                     return Ok(Value::Number(a / b));
                 } else {
@@ -64,17 +67,23 @@ impl BinaryOp {
                         line,
                     ));
                 }
-            },
+            }
             Self::Modulo => {
                 if let (Value::Number(a), Value::Number(b)) = (a, b) {
                     if b == 0.0 {
-                        return Err(QalamError::with_line_runtime("Cannot divide by zero!", line));
+                        return Err(QalamError::with_line_runtime(
+                            "Cannot divide by zero!",
+                            line,
+                        ));
                     }
-                    return Ok(Value::Number(a % b))
+                    return Ok(Value::Number(a % b));
                 } else {
-                    return Err(QalamError::with_line_runtime("Operands must be numbers!", line))
+                    return Err(QalamError::with_line_runtime(
+                        "Operands must be numbers!",
+                        line,
+                    ));
                 }
-            },
+            }
             Self::Equal => return Ok(Value::Bool(a == b)),
             Self::Greater => {
                 if let (Value::Number(a), Value::Number(b)) = (a, b) {
@@ -110,7 +119,7 @@ impl Display for BinaryOp {
             BinaryOp::Equal => "==",
             BinaryOp::Greater => ">",
             BinaryOp::Less => "<",
-            BinaryOp::Modulo => "%"
+            BinaryOp::Modulo => "%",
         };
         write!(f, "{}", op_str)
     }

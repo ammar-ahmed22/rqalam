@@ -1,6 +1,0 @@
-shai a = 0;
-
-baynama(a < 10) {
-  qul a;
-  a = a + 1;
-}

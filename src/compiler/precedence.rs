@@ -112,7 +112,7 @@ impl Precedence {
             TokenType::PERCENT => ParseRule::new(
                 None,
                 Some(|parser, can_assign| parser.binary(can_assign)),
-                Precedence::Factor
+                Precedence::Factor,
             ),
             TokenType::NUMBER => {
                 ParseRule::only_prefix(|parser, can_assign| parser.number(can_assign))

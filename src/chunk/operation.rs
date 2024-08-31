@@ -17,7 +17,7 @@ pub enum OpCode {
     Set,
     Jump,
     FalseJump,
-    LoopJump
+    LoopJump,
 }
 
 pub trait OperationBase {
