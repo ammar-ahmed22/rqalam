@@ -358,7 +358,7 @@ impl<'a> Parser<'a> {
         // self.consume(TokenType::SEMICOLON, "Expect ';'.")?;
         if self.match_token(TokenType::SEMICOLON)? {
             // no initializer
-        } else if self.match_token(TokenType::VAR)?  {
+        } else if self.match_token(TokenType::VAR)? {
             self.var_declaration(false)?;
         } else {
             self.expression_statement()?;
