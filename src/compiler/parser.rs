@@ -352,9 +352,58 @@ impl<'a> Parser<'a> {
         return Ok(());
     }
 
+    fn for_statement(&self) -> Result<(), QalamError> {
+        self.compiler.borrow_mut().begin_scope();
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'tawaf'.")?;
+        // self.consume(TokenType::SEMICOLON, "Expect ';'.")?;
+        if self.match_token(TokenType::SEMICOLON)? {
+            // no initializer
+        } else if self.match_token(TokenType::VAR)?  {
+            self.var_declaration(false)?;
+        } else {
+            self.expression_statement()?;
+        }
+
+        let mut loop_start = self.chunk.borrow().count - 1;
+        let mut exit_jump = None;
+        if !self.match_token(TokenType::SEMICOLON)? {
+            self.expression()?;
+            self.consume(TokenType::SEMICOLON, "Expect ';' after loop condition.")?;
+            exit_jump = Some(self.emit_jump(FalseJump::new()));
+            self.emit_op(Pop::new());
+        }
+        // self.consume(TokenType::SEMICOLON, "Expect ';'.")?;
+
+        if !self.match_token(TokenType::RIGHT_PAREN)? {
+            let body_jump = self.emit_jump(Jump::new());
+            let inc_start = self.chunk.borrow().count - 1;
+            self.expression()?;
+            self.emit_op(Pop::new());
+            self.consume(TokenType::RIGHT_PAREN, "Expect ')' after tawaf clauses.")?;
+            self.emit_loop(loop_start);
+            loop_start = inc_start;
+            self.patch_jump(body_jump);
+        }
+
+        self.statement()?;
+
+        self.emit_loop(loop_start);
+        if let Some(exit_jump) = exit_jump {
+            self.patch_false_jump(exit_jump);
+            self.emit_op(Pop::new());
+        }
+        self.compiler.borrow_mut().end_scope(
+            &mut self.chunk.borrow_mut(),
+            self.previous.clone().borrow().as_ref().unwrap().line,
+        );
+        return Ok(());
+    }
+
     pub fn statement(&self) -> Result<(), QalamError> {
         if self.match_token(TokenType::PRINT)? {
             self.print_statement()?;
+        } else if self.match_token(TokenType::FOR)? {
+            self.for_statement()?;
         } else if self.match_token(TokenType::IF)? {
             self.if_statement()?;
         } else if self.match_token(TokenType::WHILE)? {
